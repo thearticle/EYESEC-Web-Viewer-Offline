@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EYESEC Live Viewer</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05070b;color:#fff;font:12px system-ui,"Segoe UI",sans-serif}
+.camera{-webkit-user-drag:none;user-select:none;display:block;width:100vw;height:100vh;object-fit:contain;background:#05070b;transform-origin:0 0;cursor:zoom-in;will-change:transform;touch-action:none}
+.stack{position:fixed;bottom:15px;left:50%;transform:translateX(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;gap:0;width:max-content;max-width:calc(100vw - 12px);transition:opacity .2s,transform .2s}.unified{display:flex;flex-direction:column;gap:7px;width:100%;padding:9px 11px;background:rgba(16,23,35,.84);border:1px solid #ffffff30;box-shadow:0 8px 30px #0008;backdrop-filter:blur(14px);border-radius:11px}.unified .panel{background:none;border:0;box-shadow:none;backdrop-filter:none;border-radius:0;padding:0;width:100%;justify-content:space-between}.unified .panel+.panel{padding-top:7px;border-top:1px solid #ffffff20}
+.panel{display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 11px;background:rgba(16,23,35,.84);border:1px solid #ffffff30;box-shadow:0 8px 30px #0008;backdrop-filter:blur(14px);border-radius:11px;white-space:nowrap}
+input,button,select{font:inherit;color:white;background:#27364b;border:1px solid #5b6b7e;border-radius:7px;padding:7px 9px}
+input[type=text],input[type=password]{width:115px}input.port{width:62px}input[type=range]{width:82px;padding:0;accent-color:#38bdf8}
+button{cursor:pointer}button[aria-pressed=true],#connect{background:#175c84;border-color:#52b8e9}
+label{display:flex;align-items:center;gap:5px}.metric{color:#cbd5e1;font-variant-numeric:tabular-nums}
+#connectionStatus{font-size:11px;max-width:125px;overflow:hidden;text-overflow:ellipsis}
+.hidden-ui .stack:not(:hover):not(:focus-within){opacity:0;pointer-events:none;transform:translate(-50%,10px)}
+@media(max-width:750px){.panel{flex-wrap:wrap;gap:5px;padding:6px}input[type=text],input[type=password]{width:90px}input[type=range]{width:60px}}
+</style></head><body>
+<img draggable="false" class="camera" id="eyesec" alt="EYESEC live CCTV" {% if connected %}src="/video?quality=major"{% endif %}>
+<div class="stack"><div class="unified">
+<form class="panel" id="connectionForm" autocomplete="off">
+<label>IP <input id="ip" type="text" value="{{ camera_ip }}" placeholder="192.168.1.57" required aria-label="Camera IP address"></label>
+<label>Port <input class="port" id="port" type="text" inputmode="numeric" value="{{ camera_port }}" required aria-label="RTSP port"></label>
+<label>User <input id="username" type="text" placeholder="admin or saved user" aria-label="Username"></label>
+<label>Password <input id="password" type="password" autocomplete="new-password" aria-label="Password"></label>
+<button type="button" id="showPassword" aria-label="Show or hide password">◉</button>
+<button type="submit" id="connect">Connect</button>
+<span id="connectionStatus" class="metric" role="status">Ready</span>
+</form>
+<div class="panel">
+<button id="audioToggle" aria-label="Toggle audio" aria-pressed="false" title="Mute/unmute">🔇</button>
+<input id="audioVolume" type="range" min="0" max="100" value="60" aria-label="Volume"><span class="metric" id="volumeValue">60%</span>
+<button id="boostToggle" aria-label="Toggle boost" aria-pressed="true" title="Boost on/off">⚡</button>
+<input id="boostLevel" type="range" min="0" max="40" value="30" aria-label="Boost decibels"><span class="metric" id="boostValue">30dB</span>
+<select id="quality" aria-label="Stream quality"><option value="major">HIGH</option><option value="minor">LOW</option></select>
+<span id="fps" class="metric">-- FPS</span><span id="ping" class="metric">-- ms</span>
+<span id="clock" class="metric"></span><button id="fullscreen" aria-label="Fullscreen">⛶</button>
+<audio id="cameraAudio" preload="none"></audio>
+</div></div></div>
+<script>
+const $=id=>document.getElementById(id), camera=$('eyesec'),quality=$('quality'),audio=$('cameraAudio'),volume=$('audioVolume'),boost=$('boostLevel');
+let enabled=false,boosted=true,restartTimer;
+// Mouse-wheel zoom is centered on the cursor; drag to pan, double-click to reset.
+let zoom=1, panX=0, panY=0, dragging=false, lastX=0,lastY=0;
+function applyZoom(){camera.style.transform=`translate(${panX}px,${panY}px) scale(${zoom})`;camera.style.cursor=dragging?'grabbing':zoom>1?'grab':'zoom-in'}
+function resetZoom(){zoom=1;panX=0;panY=0;applyZoom()}
+camera.addEventListener('dragstart',e=>e.preventDefault());
+camera.addEventListener('wheel',e=>{e.preventDefault();const old=zoom;const next=Math.max(1,Math.min(6,zoom*(e.deltaY<0?1.15:1/1.15)));if(next===old)return;const px=e.clientX,py=e.clientY;panX=px-(px-panX)*next/old;panY=py-(py-panY)*next/old;zoom=next;if(zoom===1){panX=0;panY=0}applyZoom()},{passive:false});
+camera.addEventListener('pointerdown',e=>{if((e.button!==0&&e.button!==1)||zoom<=1)return;e.preventDefault();dragging=true;lastX=e.clientX;lastY=e.clientY;camera.setPointerCapture(e.pointerId);applyZoom()});
+camera.addEventListener('pointermove',e=>{if(!dragging)return;panX+=e.clientX-lastX;panY+=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;applyZoom()});
+function endDrag(){dragging=false;applyZoom()}
+camera.addEventListener('pointerup',endDrag);camera.addEventListener('pointercancel',endDrag);
+camera.addEventListener('auxclick',e=>{if(e.button===1)e.preventDefault()});
+camera.addEventListener('dblclick',resetZoom);
+
+function stopAudio(){enabled=false;audio.pause();audio.removeAttribute('src');audio.load();$('audioToggle').setAttribute('aria-pressed','false');$('audioToggle').textContent='🔇'}
+async function startAudio(){audio.src='/audio?boost='+(boosted?boost.value:0)+'&t='+Date.now();audio.volume=Number(volume.value)/100;audio.muted=Number(volume.value)===0;try{await audio.play()}catch(e){console.warn(e);stopAudio()}}
+function restartAudio(){if(!enabled)return;clearTimeout(restartTimer);restartTimer=setTimeout(()=>{audio.pause();startAudio()},450)}
+$('audioToggle').addEventListener('click',()=>{if(enabled){stopAudio();return}enabled=true;$('audioToggle').setAttribute('aria-pressed','true');$('audioToggle').textContent='🔊';startAudio()});
+volume.addEventListener('input',()=>{$('volumeValue').textContent=volume.value+'%';audio.volume=Number(volume.value)/100;audio.muted=Number(volume.value)===0});
+boost.addEventListener('input',()=>{$('boostValue').textContent=boost.value+'dB';restartAudio()});
+$('boostToggle').addEventListener('click',()=>{boosted=!boosted;$('boostToggle').setAttribute('aria-pressed',String(boosted));$('boostToggle').textContent=boosted?'⚡':'⊘';restartAudio()});
+audio.addEventListener('error',()=>{if(enabled)stopAudio()});
+function reloadVideo(){resetZoom();camera.src='/video?quality='+encodeURIComponent(quality.value)+'&t='+Date.now()}
+quality.addEventListener('change',reloadVideo);
+$('showPassword').addEventListener('click',()=>{$('password').type=$('password').type==='password'?'text':'password'});
+$('connectionForm').addEventListener('submit',async e=>{e.preventDefault();const status=$('connectionStatus');status.textContent='Connecting…';$('connect').disabled=true;try{const r=await fetch('/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ip:$('ip').value.trim(),port:$('port').value.trim(),username:$('username').value,password:$('password').value})});const j=await r.json();if(!r.ok)throw Error(j.error||'Connection failed');$('password').value='';stopAudio();reloadVideo();status.textContent='Camera selected';}catch(err){status.textContent=err.message}finally{$('connect').disabled=false}});
+$('fullscreen').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch(e){console.warn(e)}});
+function clock(){const d=new Date();$('clock').textContent=[String(d.getDate()).padStart(2,'0'),String(d.getMonth()+1).padStart(2,'0'),d.getFullYear()].join('/')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+clock();setInterval(clock,10000);
+async function metrics(){try{const r=await fetch('/metrics?quality='+quality.value,{cache:'no-store'});const j=await r.json();$('fps').textContent=j.fps===null?'-- FPS':j.fps.toFixed(1)+' FPS';$('ping').textContent=j.ping_ms===null?'-- ms':j.ping_ms+' ms'}catch(e){}}
+metrics();setInterval(metrics,2500);
+let idle;function wake(){document.body.classList.remove('hidden-ui');clearTimeout(idle);idle=setTimeout(()=>document.body.classList.add('hidden-ui'),3500)}
+['mousemove','pointerdown','keydown','touchstart'].forEach(e=>document.addEventListener(e,wake,{passive:true}));
+document.querySelectorAll('button,select,input').forEach(e=>{e.addEventListener('focus',()=>{clearTimeout(idle);document.body.classList.remove('hidden-ui')});e.addEventListener('blur',wake)});wake();
+</script></body></html>
