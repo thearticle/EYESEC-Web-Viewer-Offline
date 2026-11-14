@@ -6,6 +6,18 @@ Run the viewer on a computer that can reach the camera's IP and RTSP port. The v
 
 The supported camera paths are `/1/h264major` for HIGH and `/1/h264minor` for LOW. The RTSP port defaults to `554`. The camera must expose an audio track on the HIGH stream for audio playback.
 
+## Find the camera IP and set its password
+
+For compatible camera models that show the ONVIF menu:
+
+1. Open your camera's live view in the **EYESEC** mobile app.
+2. Tap the **three dots (⋯)** in the upper-right corner to open the camera's settings.
+3. Open **ONVIF** and turn on its switch if available. Note the local **IP address** shown on that screen. You can also check your router's connected-devices list to find the camera's IP address.
+4. Use **Reset Password**, if available, to set a new local camera password. Use that password in the viewer. If you change it later, enter the new password on your next connection.
+5. On the viewer computer, open [the local viewer](http://127.0.0.1:5000) and enter the camera IP, RTSP port (normally **554**), username (default **`admin`**), and camera password.
+
+The app menu varies by model and firmware. EYESEC notes that some SmartTuya models removed the ONVIF on/off switch. Check the manual for your camera model if the menu or reset option is missing. [EYESEC model notice](https://eyesec.cn/nd.jsp?fromColId=104&id=15)
+
 ## Connect
 
 1. Open the viewer and type the entire camera IP address into **IP**.

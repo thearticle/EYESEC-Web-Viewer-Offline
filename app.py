@@ -336,5 +336,5 @@ def audio():
 
 if __name__ == '__main__':
     from waitress import serve
-    print(f'EYESEC-only viewer running at http://{HOST}:{PORT}', flush=True)
+    print(f'EYESEC Web Viewer Offline running at http://{HOST}:{PORT}', flush=True)
     serve(app, host=HOST, port=PORT, threads=8)
