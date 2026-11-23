@@ -22,10 +22,10 @@ The app menu varies by model and firmware. EYESEC notes that some SmartTuya mode
 
 1. Open the viewer and type the entire camera IP address into **IP**.
 2. Enter the RTSP port, then enter the camera username and password. Leaving the username empty uses the saved username for the same camera address and port, or `admin` for a new camera.
-3. Click **Connect**. **Camera selected** means the TCP port was reachable. A live image confirms the stream itself is working.
+3. Click **Connect**. **Waiting for video** means the TCP port was reachable. **Live** means the selected RTSP stream is delivering frames.
 4. Click the speaker button to enable audio. Use the adjacent volume and boost controls to adjust the sound.
 
-Both credential fields start empty. On Windows, DPAPI protects the saved password for the current Windows user. The viewer can reuse it when the address, port, and username match. Delete the local `eyesec_settings.json` with the viewer stopped to clear saved settings. Other operating systems remember the address, port, and username and require the password again after restart.
+Both credential fields start empty. The password field clears after a successful submission. On Windows, DPAPI protects the saved password for the current Windows user. The viewer can reuse it when the address, port, and username match. Enter the password again after changing any of those settings. Delete the local `eyesec_settings.json` with the viewer stopped to clear saved settings. Other operating systems remember the address, port, and username and require the password again after restart.
 
 For scripted launches, the viewer accepts `CAMERA_IP`, `CAMERA_PORT`, `CAMERA_USER`, and `CAMERA_PASSWORD` from the process environment. Keep settings and credentials out of version control.
 
@@ -34,7 +34,7 @@ For scripted launches, the viewer accepts `CAMERA_IP`, `CAMERA_PORT`, `CAMERA_US
 | Symptom | What to check |
 | --- | --- |
 | Camera port unreachable | Check the full IP, RTSP port, network route, and whether the camera has RTSP enabled. |
-| Camera selected but no video | Check the credentials and confirm the camera exposes the supported RTSP paths. Try the other quality. |
+| No video | Check the credentials and confirm the camera exposes the supported RTSP paths. Try the other quality. The viewer retries when the feed drops. |
 | No audio | Run `ffmpeg -version`, confirm the HIGH stream has audio, and click the speaker button. |
-| FPS or latency is blank | FPS needs recent frames. Latency measures the TCP connection to the camera, separate from video delay. |
-| Port 5000 is already in use | Stop the other service or start the viewer on a different loopback port with `waitress-serve --listen=127.0.0.1:5001 app:app` from the activated environment. |
+| FPS or latency is blank | FPS needs recent frames. Latency measures the time to open a TCP connection to the camera. |
+| Port 5000 is already in use | Start the viewer with `python app.py --port 5001` from the activated environment, then open `http://127.0.0.1:5001`. |

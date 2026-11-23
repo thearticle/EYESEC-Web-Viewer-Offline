@@ -1,0 +1,94 @@
+* { box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #05070b;
+  color: #fff;
+  font: 12px system-ui, "Segoe UI", sans-serif;
+}
+
+.camera {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform-origin: 0 0;
+  cursor: zoom-in;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.camera:not([src]) { visibility: hidden; }
+
+.toolbar {
+  position: fixed;
+  bottom: max(15px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  width: max-content;
+  max-width: calc(100% - 12px);
+  max-height: calc(100% - 30px);
+  overflow-y: auto;
+  padding: 9px 11px;
+  background: rgba(16, 23, 35, .84);
+  border: 1px solid #ffffff30;
+  border-radius: 11px;
+  box-shadow: 0 8px 30px #0008;
+  backdrop-filter: blur(14px);
+  transition: opacity .2s, transform .2s;
+}
+
+.panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 7px 8px;
+}
+
+.panel + .panel {
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid #ffffff20;
+}
+
+.hidden-ui .toolbar:not(:hover):not(:focus-within) {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 10px);
+}
+
+input, button, select {
+  padding: 7px 9px;
+  color: inherit;
+  font: inherit;
+  background: #27364b;
+  border: 1px solid #5b6b7e;
+  border-radius: 7px;
+}
+
+label { display: flex; align-items: center; gap: 5px; }
+input[type="text"], input[type="password"] { width: 115px; }
+#ip { width: 132px; }
+input.port { width: 62px; }
+input[type="range"] { width: 82px; padding: 0; accent-color: #38bdf8; }
+button { cursor: pointer; }
+button:disabled { cursor: default; opacity: .65; }
+button[aria-pressed="true"], #connect { background: #175c84; border-color: #52b8e9; }
+:focus-visible { outline: 2px solid #9bddff; outline-offset: 2px; }
+.metric { color: #cbd5e1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#connectionStatus, #audioStatus { max-width: 200px; white-space: normal; }
+
+@media (max-width: 750px) {
+  .panel { gap: 6px; }
+  input[type="range"] { width: 60px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toolbar { transition: none; }
+}

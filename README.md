@@ -27,7 +27,7 @@ For in-house monitoring, the video travels from the camera to your computer and 
 | Feature | How to use it |
 | --- | --- |
 | **Zoom in, zoom out, and pan** | Scroll over the image to zoom around the pointer. Drag while zoomed in, or double-click to reset. |
-| **Live FPS and latency** | Read the delivered video frame rate and the camera’s TCP connection time in milliseconds. The latency indicator measures network connection time rather than camera-to-screen delay. |
+| **Live FPS and latency** | Read the decoded video frame rate and the time to open a TCP connection to the camera. |
 | **Fullscreen** | Use the fullscreen button for a larger camera view. Move the pointer to reveal the controls after they hide. |
 | **Editable camera connection** | Change the full IP address, RTSP port, username, and password in the browser. The port defaults to **554** and a new camera’s username defaults to **`admin`**. Enter the camera’s own password. |
 | **HIGH and LOW video** | Select HIGH for detail or LOW for a lighter stream when available. |
@@ -49,9 +49,9 @@ For in-house monitoring, the video travels from the camera to your computer and 
 EYESEC camera ── RTSP over Ethernet or Wi-Fi ── Viewer host ── HTTP loopback ── Browser
 ```
 
-- **Video** uses OpenCV to read the camera’s HIGH or LOW RTSP stream and serves it as MJPEG.
+- **Video** uses headless OpenCV to read the camera’s HIGH or LOW RTSP stream and serves it as MJPEG.
 - **Audio** uses FFmpeg to convert the HIGH stream’s audio track into browser-playable MP3 on demand.
-- **Camera settings** stay on the viewer host. Windows DPAPI protects the saved password for the current Windows user.
+- **Camera settings** stay on the viewer host. Windows DPAPI protects the saved password for the current Windows user. The page opens with a blank password field, even when the server can reuse the password.
 - **Browser access** uses `127.0.0.1` on the viewer computer. The camera can be elsewhere on the same local network.
 
 ## 🛠️ Tech Stack
@@ -68,12 +68,13 @@ EYESEC camera ── RTSP over Ethernet or Wi-Fi ── Viewer host ── HTTP 
 ### Prerequisites
 
 - A computer on the same local network as a camera that exposes the EYESEC RTSP stream paths.
-- Python and a modern browser. Install FFmpeg on PATH if you want live audio.
+- A 64-bit Python installation and a modern browser. The rebuild was tested with Python 3.14 on Windows.
+- Live audio requires FFmpeg with `libmp3lame` on PATH. [FFmpeg downloads](https://ffmpeg.org/download.html)
 - The camera’s local IP address and camera credentials. See the [EYESEC mobile app steps](docs/setup.md#find-the-camera-ip-and-set-its-password).
 
 ### Installation
 
-Download the source archive from the [latest release](https://github.com/thearticle/EYESEC-Web-Viewer-Offline/releases/latest), or clone the repository. On Windows, run in PowerShell:
+Clone the repository and create a fresh virtual environment. On Windows, run these commands in PowerShell.
 
 ```powershell
 git clone https://github.com/thearticle/EYESEC-Web-Viewer-Offline.git
@@ -83,17 +84,29 @@ python -m venv .venv
 .\.venv\Scripts\python.exe app.py
 ```
 
-If you downloaded the archive, extract it, open PowerShell in the extracted folder, and start at `python -m venv .venv`. The initial download and dependency installation typically require internet access.
+If an earlier installation already uses `.venv`, create this version’s environment in a new folder such as `venv` and use that folder in the commands. Starting with a fresh environment gives the viewer a single OpenCV package.
 
-Open [the local viewer](http://127.0.0.1:5000). Enter the full camera IP, use port **554** unless your camera is configured differently, and enter **`admin`** and the camera password. Click **Connect**. See the [setup and troubleshooting guide](docs/setup.md) for model and connection details.
+Open the local viewer at `http://127.0.0.1:5000`. Enter the full camera IP, the RTSP port (usually **554**), the camera username (often `admin`), and the camera password. Click **Connect** and wait for **Live**. [Setup and troubleshooting](docs/setup.md)
+
+If port 5000 is in use, add `--port 5001` to the `app.py` command and open `http://127.0.0.1:5001`.
+
+### Run the tests
+
+```powershell
+.\.venv\Scripts\python.exe -m pip check
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
 
 ## 📂 Project Structure
 
 | Path | Purpose |
 | --- | --- |
-| `app.py` | Local HTTP server, camera connection, and media streaming |
-| `templates/viewer.html` | Browser controls and viewer layout |
+| `app.py` | Local HTTP server and camera selection |
+| `camera.py` | RTSP capture, FPS, and audio transcoding |
+| `camera_settings.py` | Input validation and local settings storage |
+| `templates/viewer.html`, `static/` | Browser controls and viewer layout |
 | `requirements.txt` | Python dependencies |
+| `tests/` | Camera settings and viewer endpoint tests |
 | `docs/setup.md` | Camera setup and troubleshooting |
 | `docs/images/` | Viewer screenshot and illustrated setup |
 
